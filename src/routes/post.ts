@@ -3,6 +3,7 @@ import {
 	createPost,
 	getAllPosts,
 	getPostById,
+	getPostsByOthersUserId,
 	updatePost,
 	deletePost,
 	getPostsByUserId,
@@ -13,18 +14,30 @@ import {
 	getCommentsForPost,
 	updateComment,
 	deleteComment,
-} from "../controllers/commentController.js";
+} from "../controllers/commentController";
+import { uploadImage } from "../middlewear/uploadImage";
+import upload from "../config/multer";
+import { verifyToken } from "../middlewear/middlewear";
 
 const router = express.Router();
 
 // Create a new post
-router.post("/create", createPost);
+router.post(
+	"/create",
+	upload.single("file"),
+	verifyToken,
+	uploadImage,
+	createPost
+);
 
 // Get all posts
 router.get("/all", getAllPosts);
 
 // Get a single post by ID
 router.get("/:id", getPostById);
+
+// Get a specific user post by ID
+router.get("/user/:id", getPostsByOthersUserId);
 
 //To get all posts belong to that user
 router.post("/profile", getPostsByUserId);
@@ -39,7 +52,7 @@ router.delete("/delete/:id", deletePost);
 router.post("/comments", addComment);
 
 // Get comments for a post
-router.get("/posts/:postId/comments", getCommentsForPost);
+router.get("/:postId/comments", getCommentsForPost);
 
 // Update a comment
 router.put("/comments/:commentId", updateComment);

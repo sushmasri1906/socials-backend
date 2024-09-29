@@ -37,7 +37,6 @@ export const register = async (req: Request, res: Response) => {
 	}
 };
 
-// Login a user
 export const login = async (req: Request, res: Response) => {
 	const { email, password } = req.body;
 	try {
@@ -56,10 +55,13 @@ export const login = async (req: Request, res: Response) => {
 		// Generate a token
 		const token = generateToken(user._id.toString());
 
+		// Create a copy of the user object without the password
+		const userWithoutPassword = { ...user.toObject(), password: undefined };
+
 		res.json({
 			message: "Logged in successfully",
 			token,
-			userId: user._id,
+			user: userWithoutPassword,
 		});
 	} catch (error) {
 		if (error instanceof Error)

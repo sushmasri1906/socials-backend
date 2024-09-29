@@ -28,8 +28,8 @@ export const verifyToken = (
 		const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
 
 		if (typeof decoded !== "string" && decoded.id) {
-			req.body.userId = decoded.id; // Attach userId to the request object
-			next(); // Continue to the next middleware or route
+			req.body.userId = decoded.id;
+			next();
 		}
 	} catch (error) {
 		return res.status(401).json({ message: "Unauthorized: Invalid token" });

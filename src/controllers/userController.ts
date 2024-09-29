@@ -18,33 +18,78 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 // Get user by username
+// export const getUserByUsername = async (req: Request, res: Response) => {
+// 	try {
+// 		const { username } = req.query;
+// 		console.log("Received username:", username);
+
+// 		// Ensure username is present
+// 		if (!username || typeof username !== "string") {
+// 			return res
+// 				.status(400)
+// 				.json({ message: "Username query parameter is required." });
+// 		}
+
+// 		// Use regex to search for username
+// 		const query = { username: { $regex: username, $options: "i" } };
+// 		const users = await User.find(query);
+
+// 		// Check if users were found
+// 		if (users.length === 0) {
+// 			return res
+// 				.status(404)
+// 				.json({ message: `No users found with the username "${username}"` });
+// 		}
+
+// 		// Return found users
+// 		res.json({ msg: "worked" });
+// 	} catch (err) {
+// 		console.error("Server error:", err); // Log the full error for debugging
+// 		if (err instanceof Error) {
+// 			return res.status(500).json({ message: "Server error: " + err.message });
+// 		}
+// 		res.status(500).json({ message: "Unknown server error" });
+// 	}
+// };
+
 export const getUserByUsername = async (req: Request, res: Response) => {
 	try {
-		const username = req.query.username;
-		const query = username
-			? { username: { $regex: username, $options: "i" } }
-			: {};
+		const { username } = req.query;
+		console.log("Received username:", username);
+
+		// Ensure username is present and is a string
+		if (!username || typeof username !== "string") {
+			return res
+				.status(400)
+				.json({ message: "Username query parameter is required." });
+		}
+
+		// Use regex to search for username
+		const query = { username: { $regex: username, $options: "i" } };
 		const users = await User.find(query);
 
+		// Check if users were found
 		if (users.length === 0) {
-			const message = username
-				? `No users found with the username "${username}"`
-				: "No users found";
-			res.status(404).json({ message });
-		} else {
-			res.json(users);
+			return res
+				.status(404)
+				.json({ message: `No users found with the username "${username}"` });
 		}
+
+		// Return found users
+		res.json(users);
 	} catch (err) {
-		if (err instanceof Error)
-			res.status(500).json({ message: "Server error: " + err.message });
-		else res.status(500).json({ message: "unknown server error: " });
+		console.error("Server error:", err);
+		if (err instanceof Error) {
+			return res.status(500).json({ message: "Server error: " + err.message });
+		}
+		res.status(500).json({ message: "Unknown server error" });
 	}
 };
 
 // Get authenticated user profile
 export const getProfile = async (req: Request, res: Response) => {
 	try {
-		const userId = req.body.userId; // Ensure this is set by verifyToken middleware
+		const userId = req.body.userId;
 
 		const user = await User.findById(userId).select("-password");
 		if (!user) {
@@ -60,10 +105,10 @@ export const getProfile = async (req: Request, res: Response) => {
 };
 
 // Get authenticated user profile
-export const getOtherUSersProfile = async (req: Request, res: Response) => {
+export const getOtherUsersProfile = async (req: Request, res: Response) => {
 	try {
 		const params = req.params;
-		console.log(params.id);
+		console.log("this is getOtherUsersProfile");
 
 		const user = await User.findById(params.id).select("-password");
 		if (!user) {
@@ -80,9 +125,28 @@ export const getOtherUSersProfile = async (req: Request, res: Response) => {
 
 // Update user profile
 export const updateUserProfile = async (req: Request, res: Response) => {
-	const id = req.params.id;
+	const userId = req.body.userId;
 	try {
-		const user = await User.findByIdAndUpdate(id, req.body, { new: true });
+		const user = await User.findByIdAndUpdate(userId, req.body, { new: true });
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+		res.json(user);
+	} catch (err) {
+		if (err instanceof Error)
+			res.status(500).json({ message: "Server error: " + err.message });
+		else res.status(500).json({ message: "unknown server error: " });
+	}
+};
+
+export const updateUserProfilePicture = async (req: Request, res: Response) => {
+	const { imageUrl: profilePicture, userId } = req.body;
+	try {
+		const user = await User.findByIdAndUpdate(
+			userId,
+			{ profilePicture },
+			{ new: true }
+		);
 		if (!user) {
 			return res.status(404).json({ message: "User not found" });
 		}
@@ -97,8 +161,8 @@ export const updateUserProfile = async (req: Request, res: Response) => {
 // Delete user by ID
 export const deleteUserById = async (req: Request, res: Response) => {
 	try {
-		const id = req.params.id;
-		const user = await User.findByIdAndDelete(id);
+		const userId = req.body.userId;
+		const user = await User.findByIdAndDelete(userId);
 		if (!user) {
 			return res.status(404).json({ message: "User not found" });
 		}
@@ -165,5 +229,32 @@ export const unfollowUser = async (req: Request, res: Response) => {
 		if (err instanceof Error)
 			res.status(500).json({ message: "Server error: " + err.message });
 		else res.status(500).json({ message: "unknown server error: " });
+	}
+};
+
+// Get followers for a user
+export const getFollowers = async (req: Request, res: Response) => {
+	try {
+		const user = await User.findById(req.params.id).populate("followers");
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+		res.status(200).json({ followers: user.followers });
+	} catch (error) {
+		console.error("Error fetching followers:", error);
+		res.status(500).json({ message: "Error fetching followers" });
+	}
+};
+
+// Get following for a user
+export const getFollowing = async (req: Request, res: Response) => {
+	try {
+		const user = await User.findById(req.params.id).populate("following");
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+		res.status(200).json({ following: user.following });
+	} catch (error) {
+		res.status(500).json({ message: "Error fetching following" });
 	}
 };

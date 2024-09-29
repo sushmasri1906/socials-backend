@@ -6,7 +6,6 @@ import mongoose from "mongoose";
 const addLike = async (req: Request, res: Response) => {
 	try {
 		const { postId, userId } = req.body;
-
 		if (!postId || !userId) {
 			return res
 				.status(400)
@@ -42,24 +41,25 @@ const addLike = async (req: Request, res: Response) => {
 // Delete a like by ID
 const deleteLike = async (req: Request, res: Response) => {
 	try {
-		const { postId, userId } = req.params;
+		const id = req.params.id;
+		console.log(req.params);
+		const { userId } = req.body;
+		console.log(id, userId);
 
-		if (!postId || !userId) {
+		if (!id || !userId) {
 			return res
 				.status(400)
 				.json({ message: "Post ID and user ID are required" });
 		}
 
 		// Find the post
-		const post = await Post.findById(postId);
+		const post = await Post.findById(id);
 		if (!post) {
 			return res.status(404).json({ message: "Post not found" });
 		}
 
-		const userObjectId = new mongoose.Types.ObjectId(userId);
-
 		// Check if the user has liked the post
-		if (!post.likes.includes(userObjectId)) {
+		if (!post.likes.includes(userId)) {
 			return res.status(404).json({ message: "Like not found" });
 		}
 
