@@ -68,8 +68,18 @@ const getPostsByUserId = async (req: Request, res: Response) => {
 	try {
 		const userId = req.body.userId;
 		console.log("profile posts ", userId);
-		const posts = await Post.find({ user: userId });
-
+		const user = await User.findById(userId);
+		const posts = await Post.find({ user: userId })
+			.populate("user", "id username profilePicture")
+			.lean();
+		// posts.map(
+		// 	(post) =>
+		// 		(post.user = {
+		// 			id: user?._id,
+		// 			username: user?.username,
+		// 			profilePicture: user?.profilePicture,
+		// 		})
+		// );
 		if (posts && posts.length > 0) {
 			// If there are posts, send them
 			return res.json({ posts });
